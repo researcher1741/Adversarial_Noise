@@ -10,11 +10,12 @@ class AdversarialNoiseGenerator:
     This class generates adversarial examples by adding targeted noise to an input image.
     The noise is crafted to mislead the model into predicting a specified target class.
     """
-    def __init__(self, epsilon: float = 0.01):
+    def __init__(self, epsilon: float = 0.01, print_labels: bool = False):
         """
         Initialize the generator with a specified noise magnitude (epsilon).
         """
         self.epsilon = epsilon
+        self.print_labels = print_labels
         self.model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.model.eval()  # Set the model to evaluation mode by default
         self.preprocess = ResNet18_Weights.IMAGENET1K_V1.transforms()
@@ -94,9 +95,38 @@ class AdversarialNoiseGenerator:
         """
         if 0 <= label_index < len(self.imagenet_classes):
             class_name = self.imagenet_classes[label_index]
-            print(f"Class {label_index}: {class_name}")
         else:
-            print(f"Label index {label_index} is out of range.")
+            class_name = "None"
+        if self.print_labels:
+            print(f"Label: {label_index}, Class Name: {class_name}")
+        return class_name
+
+    def predict_label(self, img_path: Union[Path, str]) -> int:
+        """
+        Predict the label for the input image.
+        Input:
+            img_path (Union[Path, str]): Path to the input image.
+        Output:
+            int: Predicted label index.
+        """
+        # Preprocess the image
+        input_tensor = self.preprocess_img(img_path)
+
+        # Get model predictions & Disable gradient computation for inference
+        self.model.eval()
+        with torch.no_grad():
+            output = self.model(input_tensor)
+
+        # Get the index of the class with the highest score
+        predicted_label = torch.argmax(output, dim=1).item()
+
+        # Optionally print the class name
+        class_name = self.imagenet_classes[predicted_label]
+        if self.print_labels:
+            print(f"Predicted Label: {predicted_label}, Class Name: {class_name}")
+
+        return predicted_label, class_name
+
 
 
 
