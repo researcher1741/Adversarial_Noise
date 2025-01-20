@@ -1,6 +1,20 @@
+"""
+This file contains the implementation of the AdversarialNoiseGenerator class.
+Key functionalities include:
+- Generating adversarial noise.
+- Predicting labels and class names for images.
+- Saving adversarial images.
+- Visualizing results.
+
+The class supports ResNet18 with ImageNet-1K weights by default but can be extended for other models.
+"""
+
+# Libraries
 import torch
 from torchvision.models import resnet18, ResNet18_Weights
 from torchvision.transforms import ToPILImage
+import matplotlib.pyplot as plt
+# Modules
 from PIL import Image
 from typing import Union
 from pathlib import Path
@@ -126,7 +140,38 @@ class AdversarialNoiseGenerator:
             print(f"Predicted Label: {predicted_label}, Class Name: {class_name}")
 
         return predicted_label, class_name
+    @staticmethod
+    def visualize_images(img_path: Union[Path, str], output_path: Union[Path, str],
+                         label_in: int, class_name_in: str,
+                         label_out: int, class_name_out: str,
+                         target_label: int, class_name_target: str) -> None:
+        """
+        Visualize the input and adversarial images along with their labels and class names.
 
+        Input:
+            img_path (Union[Path, str]): Path to the input image.
+            output_path (Union[Path, str]): Path to the adversarial image.
+            label_in (int): Label of the input image.
+            class_name_in (str): Class name of the input image.
+            label_out (int): Label of the adversarial image.
+            class_name_out (str): Class name of the adversarial image.
+            target_label (int): Target label for adversarial misclassification.
+            class_name_target (str): Class name of the target label.
+        """
+        input_img = Image.open(img_path)
+        adversarial_img = Image.open(output_path)
 
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+        axs[0].imshow(input_img)
+        axs[0].axis("off")
+        axs[0].set_title(f"Input Image\nLabel: {label_in} ({class_name_in})")
+
+        axs[1].imshow(adversarial_img)
+        axs[1].axis("off")
+        axs[1].set_title(f"Adversarial Image\nLabel: {label_out} ({class_name_out})")
+
+        plt.suptitle(f"Target Label: {target_label} ({class_name_target})", fontsize=14)
+        plt.tight_layout()
+        plt.show()
 
 
