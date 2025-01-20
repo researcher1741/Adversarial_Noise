@@ -1,5 +1,6 @@
 import torch
 from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.transforms import ToPILImage
 from PIL import Image
 from typing import Union
 from pathlib import Path
@@ -17,6 +18,8 @@ class AdversarialNoiseGenerator:
         self.model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.model.eval()  # Set the model to evaluation mode by default
         self.preprocess = ResNet18_Weights.IMAGENET1K_V1.transforms()
+        self.to_pil = ToPILImage()
+        self.imagenet_classes = ResNet18_Weights.IMAGENET1K_V1.meta["categories"]
 
     def preprocess_img(self, img_path: Union[Path, str]) -> torch.Tensor:
         """
@@ -43,7 +46,7 @@ class AdversarialNoiseGenerator:
         adversarial_example = torch.clamp(adversarial_example, 0, 1)  # Keep values in valid range
         return adversarial_example
 
-    def generate_adversarial_example(self, img_path: Union[Path, str], target_label: int) -> torch.Tensor:
+    def generate_adversarial_example_tensor(self, img_path: Union[Path, str], target_label: int) -> torch.Tensor:
         """
         Generate an adversarial example for a specified target label.
         Input:
@@ -67,3 +70,33 @@ class AdversarialNoiseGenerator:
         adversarial_example = self.generate_adversarial_noise(input_tensor)
 
         return adversarial_example
+
+    def generate_adversarial_example_image(self, img_path: Union[Path, str], target_label: int,
+                                     output_path: Union[Path, str]) -> None:
+        """
+        Generate an adversarial example for a specified target label and save it as an image.
+        Input:
+            img_path (Union[Path, str]): Path to the input image.
+            target_label (int): Target class index for misclassification.
+            output_path (Union[Path, str]): Path to save the adversarial example.
+        """
+        adversarial_example = self.generate_adversarial_example_tensor(img_path, target_label)
+
+        # Convert the adversarial tensor to an image and save it
+        adversarial_img = self.to_pil(adversarial_example.squeeze(0))
+        adversarial_img.save(output_path)
+
+    def print_class_name(self, label_index: int) -> None:
+        """
+        Print the class name for a given label index based on ImageNet classes.
+        Input:
+            label_index (int): The label index for which to retrieve the class name.
+        """
+        if 0 <= label_index < len(self.imagenet_classes):
+            class_name = self.imagenet_classes[label_index]
+            print(f"Class {label_index}: {class_name}")
+        else:
+            print(f"Label index {label_index} is out of range.")
+
+
+

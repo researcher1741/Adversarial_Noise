@@ -15,7 +15,6 @@ as a user-specified target class, regardless of the original content.
 - Python 3.8 or later
 - PyTorch
 - torchvision
-- matplotlib
 - PIL (Python Imaging Library)
 
 ## Installation
